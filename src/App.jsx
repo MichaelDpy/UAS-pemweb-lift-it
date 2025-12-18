@@ -1,73 +1,53 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
-
-// Components
+// File: src/App.jsx
+import { Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
-import Footer from './components/Footer'; // Add this
-
-// Pages
+import Footer from './components/Footer';
 import Beranda from './pages/Beranda';
-import Artikel from './pages/Artikel';
 import Daftar from './pages/Daftar';
+import Masuk from './pages/Masuk';
 import Dashboard from './pages/Dashboard';
 import Kalkulator from './pages/Kalkulator';
 import Latihan from './pages/Latihan';
-import Masuk from './pages/Masuk';
-import Profil from './pages/Profil';
-import Resep from './pages/Resep';
-import NotFound from './pages/NotFound';
-
-
-// Initialize localStorage data if not exists
-if (!localStorage.getItem('liftit_users')) {
-  localStorage.setItem('liftit_users', JSON.stringify([]));
-}
-
-// Private Route Component
-const PrivateRoute = ({ children }) => {
-  const user = JSON.parse(localStorage.getItem('liftit_current_user'));
-  return user ? children : <Navigate to="/masuk" />;
-};
+import PrivateRoute from './components/PrivateRoute'; // 👈 Import ini
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <div className="min-h-screen bg-hitam flex flex-col">
-          <Navbar />
-          <main className="flex-grow pt-20">
-            <Routes>
-              <Route path="/" element={<Beranda />} />
-              <Route path="/artikel" element={<Artikel />} />
-              <Route path="/daftar" element={<Daftar />} />
-              <Route path="/masuk" element={<Masuk />} />
-              <Route 
-                path="/dashboard" 
-                element={
-                  <PrivateRoute>
-                    <Dashboard />
-                  </PrivateRoute>
-                } 
-              />
-              <Route path="/kalkulator" element={<Kalkulator />} />
-              <Route path="/latihan" element={<Latihan />} />
-              <Route 
-                path="/profil" 
-                element={
-                  <PrivateRoute>
-                    <Profil />
-                  </PrivateRoute>
-                } 
-              />
-              <Route path="/resep" element={<Resep />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </main>
-          <Footer /> {/* Add this */}
-        </div>
-      </Router>
-    </AuthProvider>
+    <>
+      <Navbar />
+      <Routes>
+        {/* Halaman Publik (Bisa diakses siapa saja) */}
+        <Route path="/" element={<Beranda />} />
+        <Route path="/daftar" element={<Daftar />} />
+        <Route path="/masuk" element={<Masuk />} />
+
+        {/* 👇 Halaman Privat (Harus Login Dulu) */}
+        <Route 
+          path="/dashboard" 
+          element={
+            <PrivateRoute>
+              <Dashboard />
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/kalkulator" 
+          element={
+            <PrivateRoute>
+              <Kalkulator />
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/latihan" 
+          element={
+            <PrivateRoute>
+              <Latihan />
+            </PrivateRoute>
+          } 
+        />
+      </Routes>
+      <Footer />
+    </>
   );
 }
 
