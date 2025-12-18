@@ -1,4 +1,3 @@
-// File: src/pages/Latihan.jsx
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 
@@ -112,7 +111,7 @@ const Latihan = () => {
       if (user) {
         try {
           const token = localStorage.getItem('token');
-          // ✅ UPDATE: Ganti localhost ke URL backend Vercel
+          // ✅ UPDATE: URL Backend Vercel
           const response = await fetch('https://backend-lift-it.vercel.app/api/workouts', {
             headers: { 'Authorization': `Bearer ${token}` }
           });
@@ -153,7 +152,7 @@ const Latihan = () => {
 
     try {
       const token = localStorage.getItem('token');
-      // ✅ UPDATE: Ganti localhost ke URL backend Vercel
+      // ✅ UPDATE: URL Backend Vercel
       const response = await fetch('https://backend-lift-it.vercel.app/api/workouts', {
         method: 'POST',
         headers: {
