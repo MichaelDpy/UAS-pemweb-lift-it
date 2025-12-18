@@ -112,7 +112,8 @@ const Latihan = () => {
       if (user) {
         try {
           const token = localStorage.getItem('token');
-          const response = await fetch('http://localhost:5000/api/workouts', {
+          // ✅ UPDATE: Ganti localhost ke URL backend Vercel
+          const response = await fetch('https://backend-lift-it.vercel.app/api/workouts', {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           
@@ -152,7 +153,8 @@ const Latihan = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/workouts', {
+      // ✅ UPDATE: Ganti localhost ke URL backend Vercel
+      const response = await fetch('https://backend-lift-it.vercel.app/api/workouts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
