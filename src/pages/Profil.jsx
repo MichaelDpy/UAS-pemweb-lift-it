@@ -23,7 +23,7 @@ const Profil = () => {
     const fetchProfile = async () => {
       try {
         const token = localStorage.getItem('token');
-        // ✅ UPDATE: URL Backend Vercel
+        // ✅ URL Backend Vercel
         const response = await fetch('https://backend-lift-it.vercel.app/api/users/me', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -61,7 +61,7 @@ const Profil = () => {
 
     try {
       const token = localStorage.getItem('token');
-      // ✅ UPDATE: URL Backend Vercel
+      // ✅ URL Backend Vercel
       const response = await fetch('https://backend-lift-it.vercel.app/api/users/me', {
         method: 'PUT',
         headers: {
@@ -81,8 +81,6 @@ const Profil = () => {
         const updatedUser = { ...savedUser, ...data.user }; // Gabungkan data lama dgn yg baru
         localStorage.setItem('user', JSON.stringify(updatedUser));
         
-        // Opsional: Reload halaman agar Context refresh (cara cepat)
-        // window.location.reload(); 
       } else {
         setMsg({ type: 'error', text: '❌ Gagal update: ' + data.msg });
       }
