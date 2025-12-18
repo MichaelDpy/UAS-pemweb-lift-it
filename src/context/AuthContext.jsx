@@ -1,105 +1,99 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import auth from '../utils/auth';
+// File: src/context/AuthContext.jsx
+import { createContext, useState, useEffect, useContext } from 'react';
 
 const AuthContext = createContext();
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
-
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(() => {
-    const savedUser = localStorage.getItem('liftit_current_user');
-    return savedUser ? JSON.parse(savedUser) : null;
-  });
-
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // URL Backend kita (Pastikan portnya sama dengan di index.js backend)
+  const API_URL = 'http://localhost:5000/api/auth';
+
+  // Cek apakah ada user login saat aplikasi pertama dibuka
   useEffect(() => {
-    // Initialize auth from localStorage
-    const savedUser = localStorage.getItem('liftit_current_user');
-    if (savedUser) {
-      try {
-        const parsedUser = JSON.parse(savedUser);
-        setUser(parsedUser);
-        auth.currentUser = parsedUser;
-      } catch (error) {
-        console.error('Error parsing user data:', error);
-        localStorage.removeItem('liftit_current_user');
-      }
+    const savedUser = localStorage.getItem('user');
+    const token = localStorage.getItem('token');
+    
+    if (savedUser && token) {
+      setUser(JSON.parse(savedUser));
     }
     setLoading(false);
   }, []);
 
-  const login = (email, password) => {
-    const result = auth.login(email, password);
-    if (result.success) {
-      setUser(result.user);
-      localStorage.setItem('liftit_current_user', JSON.stringify(result.user));
-    }
-    return result;
-  };
+  // Fungsi Login
+  const login = async (email, password) => {
+    try {
+      const response = await fetch(`${API_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
 
-  const register = (userData) => {
-    const result = auth.register(userData);
-    if (result.success) {
-      setUser(result.user);
-      localStorage.setItem('liftit_current_user', JSON.stringify(result.user));
-    }
-    return result;
-  };
+      const data = await response.json();
 
-  const logout = () => {
-    const result = auth.logout();
-    if (result.success) {
-      setUser(null);
-      localStorage.removeItem('liftit_current_user');
-    }
-    return result;
-  };
-
-  const updateUser = (userId, newData) => {
-    const success = auth.updateUserData(userId, newData);
-    if (success && auth.currentUser) {
-      setUser(auth.currentUser);
-      localStorage.setItem('liftit_current_user', JSON.stringify(auth.currentUser));
-    }
-    return success;
-  };
-
-  // Tambahkan fungsi refresh
-  const refreshUserData = () => {
-    if (user?.id) {
-      const freshUser = auth.getUserById(user.id);
-      if (freshUser) {
-        setUser(freshUser);
-        auth.currentUser = freshUser;
-        localStorage.setItem('liftit_current_user', JSON.stringify(freshUser));
-        return true;
+      if (!response.ok) {
+        throw new Error(data.msg || 'Login gagal');
       }
+
+      // Simpan data ke browser
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      
+      setUser(data.user);
+      return { success: true };
+    } catch (error) {
+      // Kita pakai 'message' agar sesuai dengan yang dibaca di Masuk.jsx
+      return { success: false, message: error.message };
     }
-    return false;
   };
 
-  const value = {
-    user,
-    login,
-    register,
-    logout,
-    updateUser,
-    refreshUserData, // <-- Tambahkan ini
-    isLoggedIn: auth.isLoggedIn,
-    getCurrentUser: auth.getCurrentUser,
-    getUserById: auth.getUserById
+  // Fungsi Register (Diupdate agar bisa terima Object formData)
+  const register = async (arg1, arg2, arg3) => {
+    let username, email, password;
+
+    // Cek apakah inputnya object (dari form Daftar.jsx) atau terpisah
+    if (typeof arg1 === 'object' && arg1 !== null) {
+      username = arg1.nama; 
+      email = arg1.email;
+      password = arg1.password;
+    } else {
+      username = arg1;
+      email = arg2;
+      password = arg3;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.msg || 'Registrasi gagal');
+      }
+
+      return { success: true };
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
+  };
+
+  // Fungsi Logout
+  const logout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={{ user, login, register, logout, loading }}>
       {!loading && children}
     </AuthContext.Provider>
   );
 };
+
+export const useAuth = () => useContext(AuthContext);
