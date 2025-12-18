@@ -1,3 +1,4 @@
+// File: src/pages/Masuk.jsx
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -5,7 +6,6 @@ import { useAuth } from '../context/AuthContext';
 const Masuk = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -19,14 +19,13 @@ const Masuk = () => {
     setLoading(true);
 
     try {
-      const result = login(email, password);
+      // ✅ Perbaikan: Tambahkan 'await' karena login adalah fungsi async (fetch ke backend)
+      const result = await login(email, password);
+      
       if (result.success) {
-        if (rememberMe) {
-          localStorage.setItem('rememberMe', 'true');
-        }
         navigate('/dashboard');
       } else {
-        setError(result.message);
+        setError(result.message || 'Login Gagal. Cek email dan password.');
       }
     } catch (error) {
       setError('Terjadi kesalahan. Silakan coba lagi.');
@@ -52,20 +51,21 @@ const Masuk = () => {
 
         {/* Login Form */}
         <div className="max-w-md mx-auto">
-          <div className="kartu p-8 mb-6">
-            <h2 className="text-2xl font-bold mb-6 text-center">Masuk ke Akun Anda</h2>
+          <div className="kartu p-8 mb-6 bg-gray-900 rounded-lg shadow-xl border border-gray-800">
+            <h2 className="text-2xl font-bold mb-6 text-center text-white">Masuk ke Akun Anda</h2>
             
             <form onSubmit={handleSubmit}>
               {/* Email */}
               <div className="mb-6">
-                <label className="block text-gray-300 mb-2">Alamat Email</label>                   <i className="fas fa-envelope absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-
+                <label className="block text-gray-300 mb-2">Alamat Email</label>
                 <div className="relative">
+                  {/* Ikon Amplop ditaruh di sini agar rapi */}
+                  <i className="fas fa-envelope absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="input-custom w-full pl-12 pr-4 py-3"
+                    className="w-full bg-gray-800 border border-gray-700 text-white pl-12 pr-4 py-3 rounded focus:outline-none focus:border-red-600 placeholder-gray-500"
                     placeholder="nama@email.com"
                     required
                   />
@@ -74,14 +74,15 @@ const Masuk = () => {
 
               {/* Password */}
               <div className="mb-6">
-                <label className="block text-gray-300 mb-2">Password</label>                    <i className="fas fa-lock absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-
+                <label className="block text-gray-300 mb-2">Password</label>
                 <div className="relative">
+                  {/* Ikon Gembok ditaruh di sini agar rapi */}
+                  <i className="fas fa-lock absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
                   <input
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="input-custom w-full pl-12 pr-12 py-3"
+                    className="w-full bg-gray-800 border border-gray-700 text-white pl-12 pr-12 py-3 rounded focus:outline-none focus:border-red-600 placeholder-gray-500"
                     placeholder="********"
                     required
                   />
@@ -95,8 +96,6 @@ const Masuk = () => {
                 </div>
               </div>
 
-            
-
               {/* Error Message */}
               {error && (
                 <div className="mb-6 p-4 bg-red-900/30 border border-red-800 rounded-lg text-red-300 text-sm">
@@ -109,7 +108,7 @@ const Masuk = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className={`tombol-merah w-full py-3 text-lg mb-4 ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
+                className={`w-full bg-red-600 text-white py-3 rounded-lg text-lg font-bold mb-4 hover:bg-red-700 transition ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
               >
                 {loading ? (
                   <>
@@ -123,23 +122,18 @@ const Masuk = () => {
                   </>
                 )}
               </button>
-
-              
-
             </form>
 
             {/* Register Link */}
             <div className="text-center mt-6">
               <p className="text-gray-400">
                 Belum punya akun?{' '}
-                <Link to="/daftar" className="text-merah font-bold hover:text-red-400">
+                <Link to="/daftar" className="text-red-600 font-bold hover:text-red-400">
                   Daftar sekarang
                 </Link>
               </p>
             </div>
           </div>
-
-          
         </div>
       </div>
     </div>
