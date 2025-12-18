@@ -1,6 +1,6 @@
+// File: src/pages/Latihan.jsx
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import userManager from '../utils/userManager';
 
 const Latihan = () => {
   const { user } = useAuth();
@@ -10,11 +10,11 @@ const Latihan = () => {
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [selectedExercise, setSelectedExercise] = useState(null);
 
-  // Sample workout programs data
+  // --- DATA PROGRAM LATIHAN (Statis) ---
   const workoutPrograms = {
     pushpull: {
       title: "Push-Pull-Legs (PPL)",
-      description: "Program Push-Pull-Legs membagi latihan menjadi tiga kategori: Push (dorong), Pull (tarik), dan Legs (kaki). Program ini optimal untuk perkembangan otot yang seimbang dan cocok untuk natural lifters.",
+      description: "Program Push-Pull-Legs membagi latihan menjadi tiga kategori: Push (dorong), Pull (tarik), dan Legs (kaki). Optimal untuk perkembangan otot seimbang.",
       days: 6,
       duration: "60-75 menit",
       level: "Intermediate - Advanced",
@@ -106,22 +106,38 @@ const Latihan = () => {
     }
   };
 
-  // Load workout history
+  // --- 1. LOAD HISTORY DARI DATABASE ---
   useEffect(() => {
-    if (user) {
-      const userData = JSON.parse(localStorage.getItem('liftit_users') || '[]')
-        .find(u => u.id === user.id);
-      if (userData) {
-        setWorkoutHistory(userData.data.progress.latihan || []);
+    const fetchHistory = async () => {
+      if (user) {
+        try {
+          const token = localStorage.getItem('token');
+          const response = await fetch('http://localhost:5000/api/workouts', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          
+          if(response.ok) {
+            const data = await response.json();
+            // Mapping format Database -> Frontend
+            const formattedData = data.map(item => ({
+              id: item.id,
+              jenis: item.program_name,
+              durasi: item.duration,
+              kalori: item.calories,
+              tanggal: item.date
+            }));
+            setWorkoutHistory(formattedData);
+          }
+        } catch (error) {
+          console.error("Gagal load history:", error);
+        }
       }
-    }
+    };
+    fetchHistory();
   }, [user]);
 
-  const handleStartProgram = () => {
-    alert(`Program "${workoutPrograms[currentProgram].title}" telah dimulai!`);
-  };
-
-  const handleCompleteWorkout = () => {
+  // --- 2. SIMPAN LATIHAN KE DATABASE ---
+  const handleCompleteWorkout = async () => {
     if (!user) {
       alert('Silakan login untuk mencatat latihan!');
       return;
@@ -129,21 +145,46 @@ const Latihan = () => {
 
     const workout = workoutPrograms[currentProgram].workouts[currentDay];
     const workoutData = {
-      jenis: workout.title,
-      durasi: workout.duration,
-      kalori: workout.calories
+      program_name: workout.title,
+      duration: parseInt(workout.duration),
+      calories: parseInt(workout.calories)
     };
 
-    userManager.addWorkoutSession(user.id, workoutData);
-    
-    // Update local state
-    const newWorkout = {
-      tanggal: new Date().toISOString(),
-      ...workoutData
-    };
-    setWorkoutHistory([...workoutHistory, newWorkout]);
-    
-    alert(`Latihan "${workout.title}" selesai!`);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/workouts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(workoutData)
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Update tampilan history secara langsung
+        const newHistoryItem = {
+          id: data.id,
+          jenis: data.program_name,
+          durasi: data.duration,
+          kalori: data.calories,
+          tanggal: data.date
+        };
+        setWorkoutHistory([newHistoryItem, ...workoutHistory]);
+        alert(`✅ Latihan "${workout.title}" berhasil disimpan!`);
+      } else {
+        alert('Gagal menyimpan: ' + (data.msg || 'Error server'));
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Terjadi kesalahan koneksi');
+    }
+  };
+
+  const handleStartProgram = () => {
+    alert(`Program "${workoutPrograms[currentProgram].title}" telah dimulai! Semangat! 🔥`);
   };
 
   const handleShowVideo = (exercise) => {
@@ -153,10 +194,8 @@ const Latihan = () => {
 
   const calculateStreak = () => {
     if (workoutHistory.length === 0) return 0;
-    
-    const dates = [...new Set(workoutHistory.map(w => 
-      new Date(w.tanggal).toDateString()
-    ))].sort((a, b) => new Date(b) - new Date(a));
+    const dates = [...new Set(workoutHistory.map(w => new Date(w.tanggal).toDateString()))]
+      .sort((a, b) => new Date(b) - new Date(a));
     
     let streak = 0;
     let currentDate = new Date();
@@ -164,14 +203,9 @@ const Latihan = () => {
     for (let i = 0; i < dates.length; i++) {
       const workoutDate = new Date(dates[i]);
       const diffDays = Math.floor((currentDate - workoutDate) / (1000 * 60 * 60 * 24));
-      
-      if (diffDays === i) {
-        streak++;
-      } else {
-        break;
-      }
+      if (diffDays === i) streak++;
+      else break;
     }
-    
     return streak;
   };
 
@@ -179,21 +213,21 @@ const Latihan = () => {
   const currentWorkout = currentProgramData?.workouts[currentDay];
 
   return (
-    <div className="min-h-screen bg-hitam pt-6 pb-12 px-4">
+    <div className="min-h-screen bg-hitam pt-24 pb-12 px-4">
       <div className="container mx-auto max-w-7xl">
         {/* Header */}
         <div className="text-center mb-10">
-          <h1 className="text-3xl md:text-4xl font-bold mb-4">
+          <h1 className="text-3xl md:text-4xl font-bold mb-4 text-white">
             <i className="fas fa-dumbbell text-merah mr-3"></i>
             Program Latihan Terstruktur
           </h1>
           <p className="text-gray-400 text-base md:text-lg">
-            Pilih program yang sesuai dengan tujuan dan level Anda. Dilengkapi dengan video panduan.
+            Pilih program yang sesuai dengan tujuan dan level Anda.
           </p>
           
           {/* Progress Summary */}
-          <div className="mt-6 p-4 bg-gradient-to-r from-gray-800/50 to-gray-900/50 border border-gray-700 rounded-lg max-w-2xl mx-auto">
-            <div className="flex items-center justify-center space-x-6">
+          <div className="mt-6 p-4 bg-gray-900 border border-gray-700 rounded-lg max-w-2xl mx-auto">
+            <div className="flex items-center justify-center space-x-6 text-white">
               <div className="text-center">
                 <div className="text-2xl font-bold text-merah">{workoutHistory.length}</div>
                 <div className="text-sm text-gray-400">Total Selesai</div>
@@ -213,7 +247,7 @@ const Latihan = () => {
         </div>
 
         {/* Program Tabs */}
-        <div className="flex flex-wrap gap-2 md:gap-0 border-b border-abu-border mb-8 overflow-x-auto">
+        <div className="flex flex-wrap gap-2 md:gap-0 border-b border-gray-700 mb-8 overflow-x-auto">
           {Object.keys(workoutPrograms).map((programKey) => (
             <button
               key={programKey}
@@ -222,22 +256,20 @@ const Latihan = () => {
                 const workouts = workoutPrograms[programKey].workouts;
                 setCurrentDay(Object.keys(workouts)[0]);
               }}
-              className={`px-4 py-3 font-medium border-b-2 ${
+              className={`px-4 py-3 font-medium border-b-2 transition-colors ${
                 currentProgram === programKey
                   ? 'border-merah text-merah'
                   : 'border-transparent text-gray-400 hover:text-white'
               }`}
             >
-              {programKey === 'pushpull' && <><i className="fas fa-sync-alt mr-2"></i> Push-Pull-Legs</>}
-              {programKey === 'upperlower' && <><i className="fas fa-exchange-alt mr-2"></i> Upper-Lower</>}
+              {workoutPrograms[programKey].title}
             </button>
           ))}
         </div>
 
         {/* Program Description */}
-        <div className="kartu p-6 md:p-8 mb-8">
+        <div className="kartu p-6 md:p-8 mb-8 text-white">
           <div className="flex flex-col md:flex-row md:items-start gap-8">
-            {/* Program Info */}
             <div className="md:w-2/3">
               <h2 className="text-2xl font-bold mb-4">{currentProgramData.title}</h2>
               <div className="flex flex-wrap gap-4 mb-6">
@@ -254,116 +286,85 @@ const Latihan = () => {
                   <span>{currentProgramData.level}</span>
                 </div>
               </div>
-              
               <p className="text-gray-300 mb-6">{currentProgramData.description}</p>
-              
-              <button 
-                onClick={handleStartProgram}
-                className="tombol-merah px-6 md:px-8 py-3 w-full md:w-auto"
-              >
+              <button onClick={handleStartProgram} className="tombol-merah px-6 py-3 w-full md:w-auto">
                 <i className="fas fa-play mr-2"></i> Mulai Program Ini
               </button>
             </div>
             
-            {/* Schedule */}
-            <div className="md:w-1/3">
+            {/* Schedule Sidebar */}
+            <div className="md:w-1/3 bg-gray-900 p-4 rounded-xl border border-gray-800">
               <h3 className="font-bold mb-4 text-gray-300">Jadwal Mingguan</h3>
-              <div className="space-y-2">
+              <div className="space-y-2 text-sm">
                 {currentProgramData.schedule?.map((item, index) => (
-                  <div key={index} className="flex justify-between items-center p-3 bg-gray-800 rounded-lg">
-                    <span className="font-medium">{item.day}</span>
-                    <span className={`font-bold ${
-                      item.type === 'push' ? 'text-merah' :
-                      item.type === 'pull' ? 'text-blue-400' :
-                      item.type === 'legs' ? 'text-green-400' :
-                      'text-gray-400'
+                  <div key={index} className="flex justify-between items-center p-2 rounded hover:bg-gray-800 transition">
+                    <span className="text-gray-400">{item.day}</span>
+                    <span className={`font-bold uppercase text-xs px-2 py-1 rounded ${
+                      item.type === 'push' ? 'bg-red-900/30 text-red-400' :
+                      item.type === 'pull' ? 'bg-blue-900/30 text-blue-400' :
+                      item.type === 'legs' ? 'bg-green-900/30 text-green-400' :
+                      'bg-gray-800 text-gray-500'
                     }`}>
-                      {item.type.charAt(0).toUpperCase() + item.type.slice(1)}
+                      {item.type}
                     </span>
                   </div>
-                )) || (
-                  <div className="text-center p-4 text-gray-500">
-                    <p>Tidak ada jadwal tersedia</p>
-                  </div>
-                )}
+                ))}
               </div>
             </div>
           </div>
         </div>
 
-        {/* Workout Days */}
-        <div className="mb-10">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold">Detail Latihan per Hari</h2>
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-400">Status</span>
-              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+        {/* Workout Details & Actions */}
+        {currentWorkout && (
+          <div className="mb-10">
+            {/* Day Tabs */}
+            <div className="flex flex-wrap gap-2 mb-6">
+              {Object.keys(currentProgramData.workouts).map((dayKey) => (
+                <button
+                  key={dayKey}
+                  onClick={() => setCurrentDay(dayKey)}
+                  className={`px-4 py-2 rounded-lg font-medium text-sm transition ${
+                    currentDay === dayKey
+                      ? 'bg-merah text-white'
+                      : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                  }`}
+                >
+                  {currentProgramData.workouts[dayKey].title}
+                </button>
+              ))}
             </div>
-          </div>
-          
-          {/* Day Tabs */}
-          <div className="flex flex-wrap gap-2 mb-6 overflow-x-auto">
-            {currentProgramData.workouts && Object.keys(currentProgramData.workouts).map((dayKey) => (
-              <button
-                key={dayKey}
-                onClick={() => setCurrentDay(dayKey)}
-                className={`px-4 py-2 rounded-lg font-medium ${
-                  currentDay === dayKey
-                    ? 'bg-merah text-white'
-                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                }`}
-              >
-                {currentProgramData.workouts[dayKey].title}
-              </button>
-            ))}
-          </div>
-          
-          {/* Workout Content */}
-          {currentWorkout && (
-            <div className="kartu p-6 md:p-8 mb-8">
-              <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-8">
+
+            <div className="kartu p-6 md:p-8 mb-8 text-white">
+              <div className="flex justify-between items-start mb-6">
                 <div>
-                  <h3 className="text-xl md:text-2xl font-bold mb-2">{currentWorkout.title}</h3>
-                  <p className="text-gray-400">
-                    Fokus: <span className="text-merah font-medium">{currentWorkout.focus}</span>
-                  </p>
+                  <h3 className="text-2xl font-bold mb-1">{currentWorkout.title}</h3>
+                  <p className="text-gray-400">Fokus: <span className="text-merah">{currentWorkout.focus}</span></p>
                 </div>
-                <div className="flex items-center space-x-4">
-                  <div className="text-center">
-                    <div className="text-lg md:text-xl font-bold">{currentWorkout.exercises.length}</div>
-                    <div className="text-sm text-gray-400">Gerakan</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-lg md:text-xl font-bold">
-                      {currentWorkout.exercises.reduce((sum, ex) => sum + ex.sets, 0)}
-                    </div>
-                    <div className="text-sm text-gray-400">Total Set</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-lg md:text-xl font-bold">{currentWorkout.duration}m</div>
-                    <div className="text-sm text-gray-400">Estimasi Waktu</div>
-                  </div>
+                <div className="text-right hidden sm:block">
+                  <div className="text-xl font-bold">{currentWorkout.duration}m</div>
+                  <div className="text-sm text-gray-500">Estimasi</div>
                 </div>
               </div>
-              
-              <div className="space-y-4 mb-8">
+
+              {/* Exercises List */}
+              <div className="space-y-4">
                 {currentWorkout.exercises.map((exercise, index) => (
-                  <div key={exercise.id} className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg">
-                    <div className="flex items-center">
-                      <div className="w-10 h-10 bg-merah/20 rounded-lg flex items-center justify-center mr-4">
-                        <span className="font-bold">{index + 1}</span>
+                  <div key={index} className="flex items-center justify-between p-4 bg-gray-900 border border-gray-800 rounded-xl hover:border-gray-700 transition">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center font-bold text-gray-500">
+                        {index + 1}
                       </div>
                       <div>
-                        <h4 className="font-bold text-base md:text-lg">{exercise.name}</h4>
-                        <p className="text-sm text-gray-400">{exercise.sets} set × {exercise.reps} reps</p>
+                        <h4 className="font-bold">{exercise.name}</h4>
+                        <p className="text-sm text-gray-400">{exercise.sets} Sets × {exercise.reps}</p>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-3 md:space-x-4">
-                      <span className="text-gray-400 text-sm md:text-base">Rest: {exercise.rest}</span>
+                    <div className="flex items-center gap-4">
+                      <span className="text-xs text-gray-500 hidden sm:block">Rest: {exercise.rest}</span>
                       <button 
                         onClick={() => handleShowVideo(exercise)}
-                        className="text-merah hover:text-red-400 text-lg"
-                        title="Lihat video"
+                        className="text-merah hover:text-red-400 text-2xl"
+                        title="Lihat Video"
                       >
                         <i className="fas fa-play-circle"></i>
                       </button>
@@ -371,135 +372,86 @@ const Latihan = () => {
                   </div>
                 ))}
               </div>
-              
-              <div className="mt-6 pt-6 border-t border-gray-700">
-                <h4 className="font-bold mb-4 text-gray-300">Tips Latihan</h4>
-                <ul className="space-y-2 text-sm md:text-base text-gray-300">
-                  <li><i className="fas fa-check text-merah mr-2"></i> Fokus pada form yang benar daripada beban berat</li>
-                  <li><i className="fas fa-check text-merah mr-2"></i> Istirahat sesuai waktu yang direkomendasikan</li>
-                  <li><i className="fas fa-check text-merah mr-2"></i> Catat beban yang digunakan untuk progressive overload</li>
-                  <li><i className="fas fa-check text-merah mr-2"></i> Lakukan pemanasan 5-10 menit sebelum latihan</li>
-                </ul>
-              </div>
-            </div>
-          )}
-          
-          {/* Complete Button */}
-          <div className="text-center">
-            <button 
-              onClick={handleCompleteWorkout}
-              className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg text-lg font-semibold"
-            >
-              <i className="fas fa-check-circle mr-2"></i> Tandai Latihan Ini Selesai
-            </button>
-            <p className="text-gray-400 text-sm mt-2">Klik untuk mencatat latihan hari ini selesai</p>
-          </div>
-        </div>
 
-        {/* Progress Tracker */}
-        <div className="kartu p-6 md:p-8 mb-8">
-          <h2 className="text-2xl font-bold mb-6">Progress Latihan</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="text-center p-6 bg-gray-900 rounded-xl">
-              <div className="text-3xl font-bold text-merah mb-2">{workoutHistory.length}</div>
-              <div className="text-gray-400">Total Selesai</div>
-            </div>
-            <div className="text-center p-6 bg-gray-900 rounded-xl">
-              <div className="text-3xl font-bold text-blue-400 mb-2">{calculateStreak()}</div>
-              <div className="text-gray-400">Streak Hari</div>
-            </div>
-            <div className="text-center p-6 bg-gray-900 rounded-xl">
-              <div className="text-3xl font-bold text-green-400 mb-2">
-                {workoutHistory.reduce((sum, w) => sum + (w.durasi || 0), 0)}
+              {/* Complete Action */}
+              <div className="mt-8 text-center pt-6 border-t border-gray-800">
+                <button 
+                  onClick={handleCompleteWorkout}
+                  className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-xl text-lg font-bold shadow-lg shadow-green-900/20 hover:-translate-y-1 transition transform"
+                >
+                  <i className="fas fa-check-circle mr-2"></i> Tandai Latihan Selesai
+                </button>
+                <p className="text-gray-500 text-sm mt-3">Klik ini untuk menyimpan progress ke database</p>
               </div>
-              <div className="text-gray-400">Menit Latihan</div>
             </div>
           </div>
-          
-          {/* Recent Workouts */}
-          <div>
-            <h3 className="font-bold mb-4 text-gray-300">Latihan Terakhir</h3>
-            <div className="space-y-3">
-              {workoutHistory.slice(-3).reverse().map((workout, index) => (
-                <div key={index} className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg">
-                  <div className="flex items-center">
-                    <div className="w-10 h-10 bg-merah/20 rounded-lg flex items-center justify-center mr-4">
-                      <i className="fas fa-dumbbell text-merah"></i>
+        )}
+
+        {/* Recent History */}
+        <div className="kartu p-6 text-white">
+          <h3 className="font-bold mb-4 text-lg">Riwayat Latihan Terakhir</h3>
+          <div className="space-y-3">
+            {workoutHistory.length > 0 ? (
+              workoutHistory.slice(0, 5).map((workout, index) => (
+                <div key={index} className="flex justify-between items-center p-4 bg-gray-900 rounded-lg border border-gray-800">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-merah/20 rounded-full flex items-center justify-center text-merah">
+                      <i className="fas fa-dumbbell"></i>
                     </div>
                     <div>
-                      <div className="font-medium">{workout.jenis}</div>
-                      <div className="text-sm text-gray-400">
-                        {new Date(workout.tanggal).toLocaleDateString('id-ID', {
-                          day: 'numeric',
-                          month: 'short'
+                      <div className="font-bold">{workout.jenis}</div>
+                      <div className="text-xs text-gray-500">
+                        {new Date(workout.tanggal).toLocaleDateString('id-ID', { 
+                          weekday: 'long', day: 'numeric', month: 'short' 
                         })}
                       </div>
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm font-medium">{workout.durasi} menit</div>
-                    <div className="text-xs text-gray-400">{workout.kalori} kcal</div>
+                    <div className="font-bold text-sm">{workout.durasi} m</div>
+                    <div className="text-xs text-gray-500">{workout.kalori} kcal</div>
                   </div>
                 </div>
-              ))}
-              {workoutHistory.length === 0 && (
-                <div className="text-center p-4 text-gray-500">
-                  <i className="fas fa-dumbbell text-2xl mb-2"></i>
-                  <p>Belum ada catatan latihan</p>
-                </div>
-              )}
-            </div>
+              ))
+            ) : (
+              <div className="text-center p-8 text-gray-500">
+                <i className="fas fa-history text-4xl mb-2 opacity-50"></i>
+                <p>Belum ada riwayat latihan.</p>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Video Modal */}
         {showVideoModal && selectedExercise && (
-          <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
-            <div className="kartu max-w-2xl w-full">
-              <div className="flex justify-between items-center p-4 border-b border-gray-700">
-                <h2 className="text-xl font-bold">{selectedExercise.name}</h2>
-                <button 
-                  onClick={() => setShowVideoModal(false)}
-                  className="text-gray-400 hover:text-white text-2xl"
-                >
-                  <i className="fas fa-times"></i>
+          <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setShowVideoModal(false)}>
+            <div className="bg-gray-900 w-full max-w-3xl rounded-2xl overflow-hidden border border-gray-700" onClick={e => e.stopPropagation()}>
+              <div className="p-4 border-b border-gray-800 flex justify-between items-center">
+                <h3 className="text-xl font-bold text-white">{selectedExercise.name}</h3>
+                <button onClick={() => setShowVideoModal(false)} className="text-gray-400 hover:text-white">
+                  <i className="fas fa-times text-xl"></i>
                 </button>
               </div>
-              
-              <div className="p-4">
-                <div className="aspect-w-16 aspect-h-9 mb-4">
-                  <iframe 
-                    src={`https://www.youtube.com/embed/${selectedExercise.video}`}
-                    className="w-full h-64 md:h-80 rounded-lg"
-                    title={selectedExercise.name}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  ></iframe>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <h4 className="font-bold mb-2 text-gray-300">Tips Eksekusi</h4>
-                    <ul className="space-y-1 text-sm text-gray-300">
-                      <li><i className="fas fa-check text-merah mr-2"></i> Kontraksi otot target dengan maksimal</li>
-                      <li><i className="fas fa-check text-merah mr-2"></i> Kontrol gerakan naik dan turun</li>
-                      <li><i className="fas fa-check text-merah mr-2"></i> Jaga postur tubuh yang benar</li>
-                    </ul>
-                  </div>
-                  <div>
-                    <h4 className="font-bold mb-2 text-gray-300">Kesalahan Umum</h4>
-                    <ul className="space-y-1 text-sm text-gray-300">
-                      <li><i className="fas fa-times text-red-400 mr-2"></i> Menggunakan momentum berlebihan</li>
-                      <li><i className="fas fa-times text-red-400 mr-2"></i> Range of motion tidak lengkap</li>
-                      <li><i className="fas fa-times text-red-400 mr-2"></i> Beban terlalu berat untuk form yang baik</li>
-                    </ul>
-                  </div>
-                </div>
+              <div className="aspect-video w-full bg-black">
+                <iframe 
+                  src={`https://www.youtube.com/embed/${selectedExercise.video}`}
+                  className="w-full h-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                ></iframe>
+              </div>
+              <div className="p-6 text-white">
+                <h4 className="font-bold text-merah mb-2">Tips Eksekusi:</h4>
+                <ul className="list-disc pl-5 text-gray-300 space-y-1">
+                  <li>Jaga form tetap sempurna, jangan terburu-buru.</li>
+                  <li>Tarik napas saat menurunkan beban, buang napas saat mengangkat.</li>
+                  <li>Istirahat {selectedExercise.rest} antar set.</li>
+                </ul>
               </div>
             </div>
           </div>
         )}
+
       </div>
     </div>
   );
