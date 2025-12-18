@@ -1,4 +1,3 @@
-// File: src/pages/Profil.jsx
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 
@@ -24,7 +23,7 @@ const Profil = () => {
     const fetchProfile = async () => {
       try {
         const token = localStorage.getItem('token');
-        // ✅ UPDATE: Ganti localhost ke URL backend Vercel
+        // ✅ UPDATE: URL Backend Vercel
         const response = await fetch('https://backend-lift-it.vercel.app/api/users/me', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -62,7 +61,7 @@ const Profil = () => {
 
     try {
       const token = localStorage.getItem('token');
-      // ✅ UPDATE: Ganti localhost ke URL backend Vercel
+      // ✅ UPDATE: URL Backend Vercel
       const response = await fetch('https://backend-lift-it.vercel.app/api/users/me', {
         method: 'PUT',
         headers: {
