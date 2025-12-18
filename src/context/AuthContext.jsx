@@ -1,4 +1,3 @@
-// File: src/context/AuthContext.jsx
 import { createContext, useState, useEffect, useContext } from 'react';
 
 const AuthContext = createContext();
@@ -7,8 +6,8 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // URL Backend kita (Pastikan portnya sama dengan di index.js backend)
-const API_URL = 'https://LINK-BACKEND-KAMU.com/api/auth';
+  // URL Backend yang sudah diperbarui
+  const API_URL = 'https://backend-lift-it.vercel.app/api/auth';
 
   // Cek apakah ada user login saat aplikasi pertama dibuka
   useEffect(() => {
@@ -97,4 +96,3 @@ const API_URL = 'https://LINK-BACKEND-KAMU.com/api/auth';
 };
 
 export const useAuth = () => useContext(AuthContext);
-
