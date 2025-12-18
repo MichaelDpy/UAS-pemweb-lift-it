@@ -1,7 +1,8 @@
+// File: src/pages/Daftar.jsx
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { validasiEmail, validasiPassword } from '../utils/main';
+import { validasiEmail, validasiPassword } from '../utils/main'; // Pastikan file ini ada
 
 const Daftar = () => {
   const [step, setStep] = useState(1);
@@ -40,7 +41,7 @@ const Daftar = () => {
   const nextStep = () => {
     setError('');
     
-    // Validate current step
+    // Validasi Step 1
     if (step === 1) {
       if (!formData.nama || !formData.email || !formData.password || !formData.confirmPassword) {
         setError('Harap isi semua data!');
@@ -63,6 +64,7 @@ const Daftar = () => {
       }
     }
     
+    // Validasi Step 2
     if (step === 2) {
       if (!formData.usia || !formData.berat || !formData.tinggi) {
         setError('Harap isi semua data fisik!');
@@ -138,7 +140,8 @@ const Daftar = () => {
     return { targetKalori, proteinGram, karboGram, lemakGram };
   };
 
-  const handleSubmit = (e) => {
+  // ✅ Aku tambahkan async/await di sini biar fungsi register jalan
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!terms) {
@@ -151,28 +154,28 @@ const Daftar = () => {
       return;
     }
     
-    const result = register(formData);
+    // Panggil register (akan dihandle AuthContext)
+    const result = await register(formData);
     
     if (result.success) {
       navigate('/dashboard');
     } else {
-      setError(result.message);
+      setError(result.message || 'Gagal Mendaftar');
     }
   };
 
   const progressWidth = ((step - 1) * 33.33) + '%';
 
   return (
-    <div className="min-h-screen bg-hitam p-4 flex items-center justify-center">
+    <div className="min-h-screen bg-black p-4 flex items-center justify-center">
       <div className="container mx-auto max-w-4xl py-8">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-merah rounded-xl flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-red-600 rounded-xl flex items-center justify-center mx-auto mb-4">
             <i className="fas fa-dumbbell text-2xl text-white"></i>
           </div>
-          <h1 className="text-3xl font-bold">
-            <span className="text-white">LIFT</span>
-            <span className="text-merah">IT</span>
+          <h1 className="text-3xl font-bold text-white">
+            LIFT<span className="text-red-600">IT</span>
           </h1>
           <p className="text-gray-400 mt-2">Bergabunglah dengan komunitas fitness</p>
         </div>
@@ -182,14 +185,14 @@ const Daftar = () => {
           <div className="flex justify-between items-center mb-2 relative">
             <div className="absolute top-1/2 left-0 right-0 h-1 bg-gray-800 -translate-y-1/2 z-0"></div>
             <div 
-              className="absolute top-1/2 left-0 h-1 bg-merah -translate-y-1/2 z-10 transition-all duration-300"
+              className="absolute top-1/2 left-0 h-1 bg-red-600 -translate-y-1/2 z-10 transition-all duration-300"
               style={{ width: progressWidth }}
             ></div>
             
             {[1, 2, 3].map((stepNum) => (
               <div key={stepNum} className="relative z-20 text-center">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-2 ${
-                  stepNum <= step ? 'bg-merah' : 'bg-gray-800'
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-2 text-white ${
+                  stepNum <= step ? 'bg-red-600' : 'bg-gray-800'
                 }`}>
                   <span className="font-bold">{stepNum}</span>
                 </div>
@@ -204,12 +207,12 @@ const Daftar = () => {
         </div>
 
         {/* Registration Form */}
-        <div className="kartu p-8">
+        <div className="bg-gray-900 p-8 rounded-lg shadow-xl border border-gray-800">
           <form onSubmit={handleSubmit}>
             {/* Step 1: Personal Information */}
             {step === 1 && (
               <div id="step1">
-                <h2 className="text-2xl font-bold mb-6">Informasi Pribadi</h2>
+                <h2 className="text-2xl font-bold mb-6 text-white">Informasi Pribadi</h2>
                 
                 <div className="grid md:grid-cols-2 gap-6 mb-6">
                   <div>
@@ -219,7 +222,7 @@ const Daftar = () => {
                       name="nama"
                       value={formData.nama}
                       onChange={handleInputChange}
-                      className="input-custom w-full"
+                      className="w-full bg-gray-800 border border-gray-700 text-white p-3 rounded focus:outline-none focus:border-red-600"
                       placeholder="John Doe"
                       required
                     />
@@ -231,7 +234,7 @@ const Daftar = () => {
                       name="email"
                       value={formData.email}
                       onChange={handleInputChange}
-                      className="input-custom w-full"
+                      className="w-full bg-gray-800 border border-gray-700 text-white p-3 rounded focus:outline-none focus:border-red-600"
                       placeholder="nama@email.com"
                       required
                     />
@@ -247,7 +250,7 @@ const Daftar = () => {
                         name="password"
                         value={formData.password}
                         onChange={handleInputChange}
-                        className="input-custom w-full pr-12"
+                        className="w-full bg-gray-800 border border-gray-700 text-white p-3 rounded focus:outline-none focus:border-red-600 pr-12"
                         placeholder="Minimal 8 karakter"
                         required
                       />
@@ -259,7 +262,6 @@ const Daftar = () => {
                         <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
                       </button>
                     </div>
-                    <p className="text-xs text-gray-400 mt-1">Minimal 8 karakter</p>
                   </div>
                   <div>
                     <label className="block text-gray-300 mb-2">Konfirmasi Password</label>
@@ -269,17 +271,10 @@ const Daftar = () => {
                         name="confirmPassword"
                         value={formData.confirmPassword}
                         onChange={handleInputChange}
-                        className="input-custom w-full pr-12"
+                        className="w-full bg-gray-800 border border-gray-700 text-white p-3 rounded focus:outline-none focus:border-red-600 pr-12"
                         placeholder="Ulangi password"
                         required
                       />
-                      <button
-                        type="button"
-                        onClick={togglePassword}
-                        className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400"
-                      >
-                        <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
-                      </button>
                     </div>
                   </div>
                 </div>
@@ -288,7 +283,7 @@ const Daftar = () => {
                   <button
                     type="button"
                     onClick={nextStep}
-                    className="tombol-merah px-6 py-3"
+                    className="bg-red-600 text-white px-6 py-3 rounded hover:bg-red-700 transition"
                   >
                     Selanjutnya <i className="fas fa-arrow-right ml-2"></i>
                   </button>
@@ -299,7 +294,7 @@ const Daftar = () => {
             {/* Step 2: Fitness Goals */}
             {step === 2 && (
               <div id="step2">
-                <h2 className="text-2xl font-bold mb-6">Tujuan & Data Fisik</h2>
+                <h2 className="text-2xl font-bold mb-6 text-white">Tujuan & Data Fisik</h2>
                 
                 <div className="grid md:grid-cols-2 gap-6 mb-6">
                   <div>
@@ -308,7 +303,7 @@ const Daftar = () => {
                       name="jenisKelamin"
                       value={formData.jenisKelamin}
                       onChange={handleInputChange}
-                      className="input-custom w-full"
+                      className="w-full bg-gray-800 border border-gray-700 text-white p-3 rounded focus:outline-none focus:border-red-600"
                     >
                       <option value="pria">Pria</option>
                       <option value="wanita">Wanita</option>
@@ -321,216 +316,69 @@ const Daftar = () => {
                       name="usia"
                       value={formData.usia}
                       onChange={handleInputChange}
-                      className="input-custom w-full"
+                      className="w-full bg-gray-800 border border-gray-700 text-white p-3 rounded focus:outline-none focus:border-red-600"
                       placeholder="25"
-                      min="15"
-                      max="80"
-                      required
                     />
                   </div>
                 </div>
                 
                 <div className="grid md:grid-cols-2 gap-6 mb-6">
-                  <div>
-                    <label className="block text-gray-300 mb-2">Berat Badan (kg)</label>
-                    <input
-                      type="number"
-                      name="berat"
-                      value={formData.berat}
-                      onChange={handleInputChange}
-                      className="input-custom w-full"
-                      placeholder="70"
-                      min="30"
-                      max="200"
-                      step="0.1"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-gray-300 mb-2">Tinggi Badan (cm)</label>
-                    <input
-                      type="number"
-                      name="tinggi"
-                      value={formData.tinggi}
-                      onChange={handleInputChange}
-                      className="input-custom w-full"
-                      placeholder="175"
-                      min="100"
-                      max="250"
-                      required
-                    />
-                  </div>
+                   <div>
+                    <label className="block text-gray-300 mb-2">Berat (kg)</label>
+                    <input type="number" name="berat" value={formData.berat} onChange={handleInputChange} className="w-full bg-gray-800 border border-gray-700 text-white p-3 rounded" />
+                   </div>
+                   <div>
+                    <label className="block text-gray-300 mb-2">Tinggi (cm)</label>
+                    <input type="number" name="tinggi" value={formData.tinggi} onChange={handleInputChange} className="w-full bg-gray-800 border border-gray-700 text-white p-3 rounded" />
+                   </div>
                 </div>
-                
-                <div className="mb-6">
-                  <label className="block text-gray-300 mb-2">Level Aktivitas</label>
-                  <select
-                    name="aktivitas"
-                    value={formData.aktivitas}
-                    onChange={handleInputChange}
-                    className="input-custom w-full"
-                  >
-                    <option value="1.2">Sedentary (Minim gerak)</option>
-                    <option value="1.375">Ringan (Olahraga 1-3x/minggu)</option>
-                    <option value="1.55">Moderat (Olahraga 3-5x/minggu)</option>
-                    <option value="1.725">Aktif (Olahraga 6-7x/minggu)</option>
-                    <option value="1.9">Sangat Aktif (Atlet)</option>
-                  </select>
-                </div>
-                
+
                 <div className="mb-6">
                   <label className="block text-gray-300 mb-2">Tujuan Utama</label>
-                  <div className="grid grid-cols-3 gap-3">
-                    {[
-                      { value: 'bulking', icon: 'fa-dumbbell', label: 'Bulking', desc: 'Naik massa otot' },
-                      { value: 'cutting', icon: 'fa-weight', label: 'Cutting', desc: 'Turun lemak' },
-                      { value: 'maintain', icon: 'fa-balance-scale', label: 'Maintain', desc: 'Pertahankan' }
-                    ].map((goal) => (
-                      <label key={goal.value} className="cursor-pointer">
-                        <input
-                          type="radio"
-                          name="tujuan"
-                          value={goal.value}
-                          checked={formData.tujuan === goal.value}
-                          onChange={handleInputChange}
-                          className="hidden peer"
-                        />
-                        <div className="p-4 border border-gray-700 rounded-lg peer-checked:border-merah peer-checked:bg-red-900/20 text-center">
-                          <i className={`fas ${goal.icon} text-xl mb-2 block text-merah`}></i>
-                          <span className="font-medium">{goal.label}</span>
-                          <p className="text-xs text-gray-400 mt-1">{goal.desc}</p>
-                        </div>
-                      </label>
-                    ))}
+                  <div className="grid grid-cols-3 gap-3 text-white">
+                     {['bulking', 'cutting', 'maintain'].map((goal) => (
+                       <label key={goal} className={`cursor-pointer border border-gray-700 p-4 rounded text-center ${formData.tujuan === goal ? 'border-red-600 bg-red-900/20' : ''}`}>
+                         <input type="radio" name="tujuan" value={goal} checked={formData.tujuan === goal} onChange={handleInputChange} className="hidden" />
+                         <span className="capitalize">{goal}</span>
+                       </label>
+                     ))}
                   </div>
                 </div>
                 
                 <div className="flex justify-between">
-                  <button
-                    type="button"
-                    onClick={prevStep}
-                    className="px-6 py-3 border border-gray-700 rounded-lg hover:bg-gray-800"
-                  >
-                    <i className="fas fa-arrow-left mr-2"></i> Kembali
-                  </button>
-                  <button
-                    type="button"
-                    onClick={nextStep}
-                    className="tombol-merah px-6 py-3"
-                  >
-                    Selanjutnya <i className="fas fa-arrow-right ml-2"></i>
-                  </button>
+                  <button type="button" onClick={prevStep} className="text-gray-400 hover:text-white">Kembali</button>
+                  <button type="button" onClick={nextStep} className="bg-red-600 text-white px-6 py-3 rounded hover:bg-red-700">Selanjutnya</button>
                 </div>
               </div>
             )}
 
-            {/* Step 3: Complete */}
+            {/* Step 3: Confirmation */}
             {step === 3 && (
               <div id="step3">
-                <h2 className="text-2xl font-bold mb-6">Hitung Kebutuhan Anda</h2>
-                
-                <div className="mb-6 p-6 bg-gray-800/50 rounded-lg">
-                  <div className="text-center mb-6">
-                    <i className="fas fa-calculator text-4xl text-merah mb-4"></i>
-                    <p className="text-gray-300">Berdasarkan data Anda, berikut rekomendasi kebutuhan harian:</p>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4 mb-6">
-                    {(() => {
-                      const macros = calculateMacros();
-                      return (
-                        <>
-                          <div className="text-center p-4 bg-gray-900 rounded-lg">
-                            <div className="text-2xl font-bold text-merah">{macros.targetKalori}</div>
-                            <div className="text-sm text-gray-400">Kalori/hari</div>
-                          </div>
-                          <div className="text-center p-4 bg-gray-900 rounded-lg">
-                            <div className="text-2xl font-bold text-blue-400">{macros.proteinGram}g</div>
-                            <div className="text-sm text-gray-400">Protein</div>
-                          </div>
-                          <div className="text-center p-4 bg-gray-900 rounded-lg">
-                            <div className="text-2xl font-bold text-yellow-400">{macros.karboGram}g</div>
-                            <div className="text-sm text-gray-400">Karbohidrat</div>
-                          </div>
-                          <div className="text-center p-4 bg-gray-900 rounded-lg">
-                            <div className="text-2xl font-bold text-green-400">{macros.lemakGram}g</div>
-                            <div className="text-sm text-gray-400">Lemak</div>
-                          </div>
-                        </>
-                      );
-                    })()}
-                  </div>
-                  
-                  <div className="mb-6">
-                    <label className="block text-gray-300 mb-2">Target Berat Badan (kg)</label>
-                    <input
-                      type="number"
-                      name="targetBerat"
-                      value={formData.targetBerat}
-                      onChange={handleInputChange}
-                      className="input-custom w-full"
-                      placeholder={formData.tujuan === 'bulking' ? parseFloat(formData.berat) + 5 : formData.tujuan === 'cutting' ? parseFloat(formData.berat) - 5 : formData.berat}
-                      step="0.1"
-                      required
-                    />
-                    <p className="text-xs text-gray-400 mt-1">Berat badan yang ingin Anda capai</p>
-                  </div>
-                  
-                  <div className="mb-6">
-                    <div className="flex items-start">
-                      <input
-                        type="checkbox"
-                        id="terms"
-                        checked={terms}
-                        onChange={(e) => setTerms(e.target.checked)}
-                        className="w-4 h-4 text-merah bg-gray-700 border-gray-600 rounded mt-1"
-                        required
-                      />
-                      <label htmlFor="terms" className="ml-2 text-sm text-gray-300">
-                        Saya setuju dengan <Link to="#" className="text-merah hover:text-red-400">Syarat & Ketentuan</Link> dan 
-                        <Link to="#" className="text-merah hover:text-red-400"> Kebijakan Privasi</Link> LIFTIT.
-                      </label>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex justify-between">
-                  <button
-                    type="button"
-                    onClick={prevStep}
-                    className="px-6 py-3 border border-gray-700 rounded-lg hover:bg-gray-800"
-                  >
-                    <i className="fas fa-arrow-left mr-2"></i> Kembali
-                  </button>
-                  <button
-                    type="submit"
-                    className="tombol-merah px-8 py-3 text-lg"
-                  >
-                    <i className="fas fa-user-plus mr-2"></i>
-                    Buat Akun
-                  </button>
-                </div>
+                 <h2 className="text-2xl font-bold mb-6 text-white">Selesai</h2>
+                 {/* Area Kalkulasi Macro */}
+                 <div className="mb-6 p-4 bg-gray-800 rounded">
+                    <p className="text-gray-300 mb-4">Target Kalori Harian: <span className="text-red-500 font-bold">{calculateMacros().targetKalori} kkal</span></p>
+                 </div>
+                 
+                 <div className="mb-6">
+                    <label className="block text-gray-300 mb-2">Target Berat (kg)</label>
+                    <input type="number" name="targetBerat" value={formData.targetBerat} onChange={handleInputChange} className="w-full bg-gray-800 border border-gray-700 text-white p-3 rounded" required />
+                 </div>
+
+                 <div className="mb-6 flex items-center">
+                    <input type="checkbox" checked={terms} onChange={(e) => setTerms(e.target.checked)} className="mr-2" />
+                    <span className="text-gray-400 text-sm">Saya setuju dengan Syarat & Ketentuan</span>
+                 </div>
+
+                 <div className="flex justify-between">
+                    <button type="button" onClick={prevStep} className="text-gray-400 hover:text-white">Kembali</button>
+                    <button type="submit" className="bg-red-600 text-white px-8 py-3 rounded hover:bg-red-700 font-bold">Buat Akun</button>
+                 </div>
               </div>
             )}
           </form>
-
-          {/* Error Message */}
-          {error && (
-            <div className="mt-6 p-4 bg-red-900/30 border border-red-800 rounded-lg text-red-300 text-sm">
-              <i className="fas fa-exclamation-circle mr-2"></i>
-              {error}
-            </div>
-          )}
-        </div>
-
-        {/* Login Link */}
-        <div className="text-center mt-6">
-          <p className="text-gray-400">
-            Sudah punya akun?{' '}
-            <Link to="/masuk" className="text-merah font-bold hover:text-red-400">
-              Masuk di sini
-            </Link>
-          </p>
+          {error && <p className="mt-4 text-red-500 text-center">{error}</p>}
         </div>
       </div>
     </div>
