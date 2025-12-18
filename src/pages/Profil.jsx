@@ -24,7 +24,8 @@ const Profil = () => {
     const fetchProfile = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:5000/api/users/me', {
+        // ✅ UPDATE: Ganti localhost ke URL backend Vercel
+        const response = await fetch('https://backend-lift-it.vercel.app/api/users/me', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await response.json();
@@ -61,7 +62,8 @@ const Profil = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/users/me', {
+      // ✅ UPDATE: Ganti localhost ke URL backend Vercel
+      const response = await fetch('https://backend-lift-it.vercel.app/api/users/me', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
