@@ -8,7 +8,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   // URL Backend kita (Pastikan portnya sama dengan di index.js backend)
-  const API_URL = 'http://localhost:5000/api/auth';
+const API_URL = 'https://LINK-BACKEND-KAMU.com/api/auth';
 
   // Cek apakah ada user login saat aplikasi pertama dibuka
   useEffect(() => {
@@ -97,3 +97,4 @@ export const AuthProvider = ({ children }) => {
 };
 
 export const useAuth = () => useContext(AuthContext);
+
